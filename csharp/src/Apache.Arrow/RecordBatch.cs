@@ -169,7 +169,22 @@ namespace Apache.Arrow
         bool IArrowArray.IsValid(int index) => true;
     }
 
-    public class PrettyPrintVisitor : IArrowArrayVisitor<IArrowArray>
+    public class PrettyPrintVisitor :
+        IArrowArrayVisitor<IArrowArray>,
+        IArrowArrayVisitor<Int32Array>,
+        IArrowArrayVisitor<Int64Array>,
+        IArrowArrayVisitor<DoubleArray>,
+        IArrowArrayVisitor<StringArray>,
+        IArrowArrayVisitor<FloatArray>,
+        IArrowArrayVisitor<BooleanArray>,
+        IArrowArrayVisitor<UInt16Array>,
+        IArrowArrayVisitor<UInt32Array>,
+        IArrowArrayVisitor<UInt64Array>,
+        IArrowArrayVisitor<Date32Array>,
+        IArrowArrayVisitor<Date64Array>,
+        IArrowArrayVisitor<TimestampArray>,
+        IArrowArrayVisitor<Time32Array>,
+        IArrowArrayVisitor<Time64Array>
     {
         private readonly StringBuilder _sb = new StringBuilder();
 
@@ -179,65 +194,7 @@ namespace Apache.Arrow
         }
         public void Visit(IArrowArray array)
         {
-            if (array is Int32Array int32Array)
-            {
-                Visit(int32Array);
-            }
-            else if (array is StringArray stringArray)
-            {
-                Visit(stringArray);
-            }else if(array is Int64Array int64Array)
-            {
-                Visit(int64Array);
-            }
-            else if (array is DoubleArray doubleArray)
-            {
-                Visit(doubleArray);
-            }
-            else if (array is FloatArray floatArray)
-            {
-                Visit(floatArray);
-            }
-            else if (array is BooleanArray booleanArray)
-            {
-                Visit(booleanArray);
-            }
-            else if (array is UInt16Array uint16Array)
-            {
-                Visit(uint16Array);
-            }
-            else if (array is UInt32Array uint32Array)
-            {
-                Visit(uint32Array);
-            }
-            else if (array is UInt64Array uint64Array)
-            {
-                Visit(uint64Array);
-            }
-            else if (array is Date32Array date32Array)
-            {
-                Visit(date32Array);
-            }
-            else if (array is Date64Array date64Array)
-            {
-                Visit(date64Array);
-            }
-            else if (array is TimestampArray timestampArray)
-            {
-                Visit(timestampArray);
-            }
-            else if (array is Time32Array time32Array)
-            {
-                Visit(time32Array);
-            }
-            else if (array is Time64Array time64Array)
-            {
-                Visit(time64Array);
-            }
-            else
-            {
-                _sb.AppendLine("Unsupported array type.");
-            }
+            _sb.AppendLine("Unsupported array type.");
         }
 
         private void PrintArray<T>(IArrowArray array, Func<int, T> getValue)
