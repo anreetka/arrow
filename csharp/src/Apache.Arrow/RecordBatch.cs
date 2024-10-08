@@ -18,6 +18,8 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
+using Apache.Arrow.Flatbuf;
 using Apache.Arrow.Memory;
 using Apache.Arrow.Types;
 
@@ -126,6 +128,108 @@ namespace Apache.Arrow
                     break;
             }
         }
+
+        public string PrettyPrint()
+        {
+            var sb = new StringBuilder();
+
+            for (int i = 0; i < ColumnCount; i++)
+            {
+                var fieldType = Schema.FieldsList[i].DataType;
+                sb.AppendLine($"{fieldType.Name}: {fieldType}");
+            }
+            sb.AppendLine("----");
+
+            for (int i = 0; i < ColumnCount; i++)
+            {
+                var column = Column(i);
+                var fieldType = Schema.FieldsList[i].DataType;
+
+                sb.AppendLine($"{fieldType.Name}:");
+                sb.AppendLine("  ["); 
+
+                sb.AppendLine("    ["); 
+                for (int j = 0; j < Length; j++)
+                {
+                    if (column.IsNull(j))
+                    {
+                        sb.Append("      NULL");
+                    }
+                    else
+                    {
+                        switch (fieldType)
+                        {
+                            case Int32Type _:
+                                var intArray = (Int32Array)column;
+                                sb.Append($"      {intArray.GetValue(j)}");
+                                break;
+                            case Int64Type _:
+                                var longArray = (Int64Array)column;
+                                sb.Append($"      {longArray.GetValue(j)}");
+                                break;
+                            case FloatType _:
+                                var floatArray = (FloatArray)column;
+                                sb.Append($"      {floatArray.GetValue(j)}");
+                                break;
+                            case DoubleType _:
+                                var doubleArray = (DoubleArray)column;
+                                sb.Append($"      {doubleArray.GetValue(j)}");
+                                break;
+                            case StringType _:
+                                var stringArray = (StringArray)column;
+                                sb.Append($"      \"{stringArray.GetString(j)}\"");
+                                break;
+                            case BooleanType _:
+                                var boolArray = (BooleanArray)column;
+                                sb.Append($"      {boolArray.GetValue(j)}");
+                                break;
+                            case Date32Type _:
+                                var date32Array = (Date32Array)column;
+                                sb.Append($"      {date32Array.GetValue(j)}");
+                                break;
+                            case Date64Type _:
+                                var date64Array = (Date64Array)column;
+                                sb.Append($"      {date64Array.GetValue(j)}");
+                                break;
+                            case Time32Type _:
+                                var time32Array = (Time32Array)column;
+                                sb.Append($"      {time32Array.GetValue(j)}");
+                                break;
+                            case Time64Type _:
+                                var time64Array = (Time64Array)column;
+                                sb.Append($"      {time64Array.GetValue(j)}");
+                                break;
+                            case Decimal128Type _:
+                                var decimal128Array = (Decimal128Array)column;
+                                sb.Append($"      {decimal128Array.GetValue(j)}");
+                                break;
+                            case BinaryType _:
+                                var binaryArray = (BinaryArray)column;
+                                sb.Append($"      \"{System.Text.Encoding.UTF8.GetString(binaryArray.GetBytes(j).ToArray())}\"");
+                                break;
+                            default:
+                                sb.Append("      Unsupported type");
+                                break;
+                        }
+                    }
+
+                    if (j < Length - 1)
+                    {
+                        sb.AppendLine(","); 
+                    }
+                    else
+                    {
+                        sb.AppendLine(); 
+                    }
+                }
+                sb.AppendLine("    ]"); 
+                sb.AppendLine("  ]");
+            }
+
+            return sb.ToString();
+        }
+
+
 
         public override string ToString() => $"{nameof(RecordBatch)}: {ColumnCount} columns by {Length} rows";
 
