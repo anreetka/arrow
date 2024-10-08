@@ -135,95 +135,22 @@ namespace Apache.Arrow
 
             for (int i = 0; i < ColumnCount; i++)
             {
-                var fieldType = Schema.FieldsList[i].DataType;
-                sb.AppendLine($"{fieldType.Name}: {fieldType}");
+                var fieldType = Schema.FieldsList[i];
+                sb.AppendLine($"{fieldType.Name}: {fieldType.DataType.GetType().Name}");
             }
             sb.AppendLine("----");
 
             for (int i = 0; i < ColumnCount; i++)
             {
                 var column = Column(i);
-                var fieldType = Schema.FieldsList[i].DataType;
+                var fieldType = Schema.FieldsList[i];
 
-                sb.AppendLine($"{fieldType.Name}:");
-                sb.AppendLine("  ["); 
+                sb.Append($"{fieldType.Name}:[");
 
-                sb.AppendLine("    ["); 
-                for (int j = 0; j < Length; j++)
-                {
-                    if (column.IsNull(j))
-                    {
-                        sb.Append("      NULL");
-                    }
-                    else
-                    {
-                        switch (fieldType)
-                        {
-                            case Int32Type _:
-                                var intArray = (Int32Array)column;
-                                sb.Append($"      {intArray.GetValue(j)}");
-                                break;
-                            case Int64Type _:
-                                var longArray = (Int64Array)column;
-                                sb.Append($"      {longArray.GetValue(j)}");
-                                break;
-                            case FloatType _:
-                                var floatArray = (FloatArray)column;
-                                sb.Append($"      {floatArray.GetValue(j)}");
-                                break;
-                            case DoubleType _:
-                                var doubleArray = (DoubleArray)column;
-                                sb.Append($"      {doubleArray.GetValue(j)}");
-                                break;
-                            case StringType _:
-                                var stringArray = (StringArray)column;
-                                sb.Append($"      \"{stringArray.GetString(j)}\"");
-                                break;
-                            case BooleanType _:
-                                var boolArray = (BooleanArray)column;
-                                sb.Append($"      {boolArray.GetValue(j)}");
-                                break;
-                            case Date32Type _:
-                                var date32Array = (Date32Array)column;
-                                sb.Append($"      {date32Array.GetValue(j)}");
-                                break;
-                            case Date64Type _:
-                                var date64Array = (Date64Array)column;
-                                sb.Append($"      {date64Array.GetValue(j)}");
-                                break;
-                            case Time32Type _:
-                                var time32Array = (Time32Array)column;
-                                sb.Append($"      {time32Array.GetValue(j)}");
-                                break;
-                            case Time64Type _:
-                                var time64Array = (Time64Array)column;
-                                sb.Append($"      {time64Array.GetValue(j)}");
-                                break;
-                            case Decimal128Type _:
-                                var decimal128Array = (Decimal128Array)column;
-                                sb.Append($"      {decimal128Array.GetValue(j)}");
-                                break;
-                            case BinaryType _:
-                                var binaryArray = (BinaryArray)column;
-                                sb.Append($"      \"{System.Text.Encoding.UTF8.GetString(binaryArray.GetBytes(j).ToArray())}\"");
-                                break;
-                            default:
-                                sb.Append("      Unsupported type");
-                                break;
-                        }
-                    }
+                var visitor = new PrettyPrintVisitor(sb);
+                column.Accept(visitor);
 
-                    if (j < Length - 1)
-                    {
-                        sb.AppendLine(","); 
-                    }
-                    else
-                    {
-                        sb.AppendLine(); 
-                    }
-                }
-                sb.AppendLine("    ]"); 
-                sb.AppendLine("  ]");
+                sb.AppendLine("]"); 
             }
 
             return sb.ToString();
@@ -240,5 +167,182 @@ namespace Apache.Arrow
 
         bool IArrowArray.IsNull(int index) => false;
         bool IArrowArray.IsValid(int index) => true;
+    }
+
+    public class PrettyPrintVisitor : IArrowArrayVisitor<IArrowArray>
+    {
+        private readonly StringBuilder _sb = new StringBuilder();
+
+        public PrettyPrintVisitor(StringBuilder sb)
+        {
+            _sb = sb;
+        }
+        public void Visit(IArrowArray array)
+        {
+            if (array is Int32Array int32Array)
+            {
+                Visit(int32Array);
+            }
+            else if (array is StringArray stringArray)
+            {
+                Visit(stringArray);
+            }else if(array is Int64Array int64Array)
+            {
+                Visit(int64Array);
+            }
+            else if (array is DoubleArray doubleArray)
+            {
+                Visit(doubleArray);
+            }
+            else if (array is FloatArray floatArray)
+            {
+                Visit(floatArray);
+            }
+            else if (array is BooleanArray booleanArray)
+            {
+                Visit(booleanArray);
+            }
+            else if (array is UInt16Array uint16Array)
+            {
+                Visit(uint16Array);
+            }
+            else if (array is UInt32Array uint32Array)
+            {
+                Visit(uint32Array);
+            }
+            else if (array is UInt64Array uint64Array)
+            {
+                Visit(uint64Array);
+            }
+            else if (array is Date32Array date32Array)
+            {
+                Visit(date32Array);
+            }
+            else if (array is Date64Array date64Array)
+            {
+                Visit(date64Array);
+            }
+            else if (array is TimestampArray timestampArray)
+            {
+                Visit(timestampArray);
+            }
+            else if (array is Time32Array time32Array)
+            {
+                Visit(time32Array);
+            }
+            else if (array is Time64Array time64Array)
+            {
+                Visit(time64Array);
+            }
+            else
+            {
+                _sb.AppendLine("Unsupported array type.");
+            }
+        }
+
+        private void PrintArray<T>(IArrowArray array, Func<int, T> getValue)
+        {
+            _sb.Append("[");
+
+            if(array.Length < 12)
+            {
+                for (int i = 0; i < array.Length; i++)
+                {
+                    _sb.Append(array.IsNull(i) ? "NULL" : getValue(i)?.ToString());
+                    if (i < array.Length - 1)
+                    {
+                        _sb.Append(",");
+                    }
+
+                }
+            }
+            else
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    _sb.Append(array.IsNull(i) ? "NULL" : getValue(i)?.ToString());
+                    if (i < 4)
+                    {
+                        _sb.Append(",");
+                    }
+                }
+
+                _sb.Append(",...,");
+
+               for (int i = array.Length - 5; i <array.Length; i++)
+               {
+                   _sb.Append(array.IsNull(i) ? "NULL" : getValue(i)?.ToString());
+                   if (i < array.Length - 1) 
+                   {
+                        _sb.Append(",");
+                   }
+               }
+            }
+
+            _sb.Append("]");
+        }
+
+
+        public void Visit(Int32Array array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+
+        public void Visit(Int64Array array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+
+        public void Visit(DoubleArray array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+
+        public void Visit(StringArray array)
+        {
+            PrintArray(array, i => array.IsNull(i) ? "NULL" : $"\"{array.GetString(i)}\"");
+        }
+
+        public void Visit(FloatArray array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+
+        public void Visit(BooleanArray array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+        public void Visit(UInt16Array array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+        public void Visit(UInt32Array array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+        public void Visit(UInt64Array array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+        public void Visit(Date32Array array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+        public void Visit(Date64Array array)
+        {
+            PrintArray(array, array.GetDateTime);
+        }
+        public void Visit(TimestampArray array)
+        {
+            PrintArray(array, array.GetTimestamp);
+        }
+        public void Visit(Time32Array array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+        public void Visit(Time64Array array)
+        {
+            PrintArray(array, array.GetValue);
+        }
     }
 }
