@@ -194,7 +194,7 @@ namespace Apache.Arrow
         }
         public void Visit(IArrowArray array)
         {
-            _sb.AppendLine("Unsupported array type.");
+            _sb.Append($"Unsupported array type for {array.GetType().Name}");
         }
 
         private void PrintArray<T>(IArrowArray array, Func<int, T> getValue)
