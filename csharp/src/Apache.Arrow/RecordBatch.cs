@@ -18,6 +18,8 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
+using Apache.Arrow.Flatbuf;
 using Apache.Arrow.Memory;
 using Apache.Arrow.Types;
 
@@ -127,6 +129,35 @@ namespace Apache.Arrow
             }
         }
 
+        public string PrettyPrint()
+        {
+            var sb = new StringBuilder();
+
+            for (int i = 0; i < ColumnCount; i++)
+            {
+                var fieldType = Schema.FieldsList[i];
+                sb.AppendLine($"{fieldType.Name}: {fieldType.DataType.GetType().Name}");
+            }
+            sb.AppendLine("----");
+
+            for (int i = 0; i < ColumnCount; i++)
+            {
+                var column = Column(i);
+                var fieldType = Schema.FieldsList[i];
+
+                sb.Append($"{fieldType.Name}:[");
+
+                var visitor = new PrettyPrintVisitor(sb);
+                column.Accept(visitor);
+
+                sb.AppendLine("]"); 
+            }
+
+            return sb.ToString();
+        }
+
+
+
         public override string ToString() => $"{nameof(RecordBatch)}: {ColumnCount} columns by {Length} rows";
 
         IRecordType IArrowRecord.Schema => this.Schema;
@@ -136,5 +167,139 @@ namespace Apache.Arrow
 
         bool IArrowArray.IsNull(int index) => false;
         bool IArrowArray.IsValid(int index) => true;
+    }
+
+    public class PrettyPrintVisitor :
+        IArrowArrayVisitor<IArrowArray>,
+        IArrowArrayVisitor<Int32Array>,
+        IArrowArrayVisitor<Int64Array>,
+        IArrowArrayVisitor<DoubleArray>,
+        IArrowArrayVisitor<StringArray>,
+        IArrowArrayVisitor<FloatArray>,
+        IArrowArrayVisitor<BooleanArray>,
+        IArrowArrayVisitor<UInt16Array>,
+        IArrowArrayVisitor<UInt32Array>,
+        IArrowArrayVisitor<UInt64Array>,
+        IArrowArrayVisitor<Date32Array>,
+        IArrowArrayVisitor<Date64Array>,
+        IArrowArrayVisitor<TimestampArray>,
+        IArrowArrayVisitor<Time32Array>,
+        IArrowArrayVisitor<Time64Array>
+    {
+        private readonly StringBuilder _sb = new StringBuilder();
+
+        public PrettyPrintVisitor(StringBuilder sb)
+        {
+            _sb = sb;
+        }
+        public void Visit(IArrowArray array)
+        {
+            _sb.Append($"Unsupported array type for {array.GetType().Name}");
+        }
+
+        private void PrintArray<T>(IArrowArray array, Func<int, T> getValue)
+        {
+            _sb.Append("[");
+
+            if(array.Length < 12)
+            {
+                for (int i = 0; i < array.Length; i++)
+                {
+                    _sb.Append(array.IsNull(i) ? "NULL" : getValue(i)?.ToString());
+                    if (i < array.Length - 1)
+                    {
+                        _sb.Append(",");
+                    }
+
+                }
+            }
+            else
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    _sb.Append(array.IsNull(i) ? "NULL" : getValue(i)?.ToString());
+                    if (i < 4)
+                    {
+                        _sb.Append(",");
+                    }
+                }
+
+                _sb.Append(",...,");
+
+               for (int i = array.Length - 5; i <array.Length; i++)
+               {
+                   _sb.Append(array.IsNull(i) ? "NULL" : getValue(i)?.ToString());
+                   if (i < array.Length - 1) 
+                   {
+                        _sb.Append(",");
+                   }
+               }
+            }
+
+            _sb.Append("]");
+        }
+
+
+        public void Visit(Int32Array array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+
+        public void Visit(Int64Array array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+
+        public void Visit(DoubleArray array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+
+        public void Visit(StringArray array)
+        {
+            PrintArray(array, i => array.IsNull(i) ? "NULL" : $"\"{array.GetString(i)}\"");
+        }
+
+        public void Visit(FloatArray array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+
+        public void Visit(BooleanArray array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+        public void Visit(UInt16Array array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+        public void Visit(UInt32Array array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+        public void Visit(UInt64Array array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+        public void Visit(Date32Array array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+        public void Visit(Date64Array array)
+        {
+            PrintArray(array, array.GetDateTime);
+        }
+        public void Visit(TimestampArray array)
+        {
+            PrintArray(array, array.GetTimestamp);
+        }
+        public void Visit(Time32Array array)
+        {
+            PrintArray(array, array.GetValue);
+        }
+        public void Visit(Time64Array array)
+        {
+            PrintArray(array, array.GetValue);
+        }
     }
 }
