@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Apache.Arrow.Types;
 
 namespace Apache.Arrow
@@ -92,6 +93,56 @@ namespace Apache.Arrow
             return Slice(offset, Length - offset);
         }
 
+        public string PrettyPrint()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"ChunkedArray: Length={Length}, DataType={DataType.Name}");
+
+            sb.Append("[");
+
+            if(ArrayCount <= 4)
+            {
+                for (int i = 0; i < ArrayCount; i++)
+                {
+                    var array = Arrays[i];
+                    var visitor = new ArrayPrinter(sb);
+                    array.Accept(visitor);
+
+                    if (i < ArrayCount - 1)
+                    {
+                        sb.AppendLine(",");
+                    }
+                }
+            }
+            else
+            {
+                for(int i = 0;i < 2;i++)
+                {
+                    var array = Arrays[i];
+                    var visitor = new ArrayPrinter(sb);
+                    array.Accept(visitor);
+                    sb.Append(",");
+                }
+
+                sb.Append("...,");
+
+                for(int i = ArrayCount-2; i<ArrayCount; i++)
+                {
+                    var array = Arrays[i];
+                    var visitor = new ArrayPrinter(sb);
+                    array.Accept(visitor);
+
+                    if(i< ArrayCount - 1)
+                    {
+                        sb.Append(",");
+                    }
+                }
+            }
+
+            sb.Append("]");
+
+            return sb.ToString();
+        }
         public override string ToString() => $"{nameof(ChunkedArray)}: Length={Length}, DataType={DataType.Name}";
       
         private static IArrowArray[] Cast(IList<Array> arrays)
