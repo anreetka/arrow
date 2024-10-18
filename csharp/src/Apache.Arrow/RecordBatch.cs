@@ -155,6 +155,8 @@ namespace Apache.Arrow
 
             sb.AppendLine("=== Column Data ===");
 
+            var visitor = new ArrayPrinter(sb);
+
             for (int i = 0; i < ColumnCount; i++)
             {
                 var column = Column(i);
@@ -162,7 +164,6 @@ namespace Apache.Arrow
 
                 sb.Append($"{field.Name}:[");
 
-                var visitor = new ArrayPrinter(sb);
                 column.Accept(visitor);
 
                 sb.AppendLine("]"); 
