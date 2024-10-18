@@ -15,6 +15,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Apache.Arrow.Types;
 
@@ -96,53 +98,41 @@ namespace Apache.Arrow
         public string PrettyPrint()
         {
             var sb = new StringBuilder();
-            sb.AppendLine($"ChunkedArray: Length={Length}, DataType={DataType.Name}");
+            sb.Append($"[");
 
-            sb.Append("[");
+            var visitor = new ArrayPrinter(sb);
 
-            if(ArrayCount <= 4)
+            if (ArrayCount <= 4)
             {
-                for (int i = 0; i < ArrayCount; i++)
-                {
-                    var array = Arrays[i];
-                    var visitor = new ArrayPrinter(sb);
-                    array.Accept(visitor);
-
-                    if (i < ArrayCount - 1)
-                    {
-                        sb.AppendLine(",");
-                    }
-                }
+                PrintArrays(visitor, sb, 0, ArrayCount);
             }
             else
             {
-                for(int i = 0;i < 2;i++)
-                {
-                    var array = Arrays[i];
-                    var visitor = new ArrayPrinter(sb);
-                    array.Accept(visitor);
-                    sb.Append(",");
-                }
-
-                sb.Append("...,");
-
-                for(int i = ArrayCount-2; i<ArrayCount; i++)
-                {
-                    var array = Arrays[i];
-                    var visitor = new ArrayPrinter(sb);
-                    array.Accept(visitor);
-
-                    if(i< ArrayCount - 1)
-                    {
-                        sb.Append(",");
-                    }
-                }
+                PrintArrays(visitor, sb, 0, 2);
+                sb.Append(",...,");
+                PrintArrays(visitor, sb, ArrayCount - 2, ArrayCount);
             }
 
             sb.Append("]");
 
             return sb.ToString();
         }
+
+        private void PrintArrays(ArrayPrinter visitor, StringBuilder sb, int start, int end)
+        {
+            for(int i =start; i < end; i++)
+            {
+                var array = Arrays[i];
+                array.Accept(visitor);
+
+                if (i < end - 1)
+                {
+                    sb.Append(",");
+                }
+
+            }
+        }
+
         public override string ToString() => $"{nameof(ChunkedArray)}: Length={Length}, DataType={DataType.Name}";
       
         private static IArrowArray[] Cast(IList<Array> arrays)

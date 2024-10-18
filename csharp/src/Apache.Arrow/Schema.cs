@@ -142,28 +142,24 @@ namespace Apache.Arrow
         public string PrettyPrint()
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Schema Details:\n");
+            sb.AppendLine("--- Schema Details ---");
             sb.AppendLine($"Number of Fields: {_fieldsList.Count}\n");
+
+            sb.AppendLine("--- Fields Information ---");
 
             foreach (var field in _fieldsList)
             {
-                if(field.IsNullable)
-                {
-                    sb.AppendLine($"{field.Name}: {field.DataType.GetType().Name}");
-                }
-                else
-                {
-                    sb.AppendLine($"{field.Name}: {field.DataType.GetType().Name} NOT NULL");
-                }
-
+                sb.AppendLine(field.PrettyPrint());
             }
+
+            sb.AppendLine("");
 
             if(HasMetadata)
             {
-                sb.AppendLine(" -- Field Metadata -- ");
+                sb.AppendLine("--- Field Metadata --- ");
                 foreach (var kv in Metadata)
                 {
-                    sb.AppendLine($" {kv.Key}: {kv.Value}");
+                    sb.AppendLine($"{kv.Key}: {kv.Value}");
                 }
             }
             else
@@ -172,7 +168,6 @@ namespace Apache.Arrow
             }
 
             return sb.ToString();
-
         }
 
         public override string ToString() => $"{nameof(Schema)}: Num fields={_fieldsList.Count}, Num metadata={Metadata?.Count ?? 0}";

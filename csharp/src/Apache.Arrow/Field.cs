@@ -79,7 +79,7 @@ namespace Apache.Arrow
                 fieldString += $" {metadataString}";
             }
 
-            return fieldString;
+            return $"{fieldString}";
         }
 
         public override string ToString() => $"{nameof(Field)}: Name={Name}, DataType={DataType.Name}, IsNullable={IsNullable}, Metadata count={Metadata?.Count ?? 0}";

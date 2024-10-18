@@ -112,32 +112,44 @@ namespace Apache.Arrow
         {
             var sb = new StringBuilder();
 
+            sb.AppendLine("--- Table Information ---");
+
+            sb.AppendLine("\nSchema:");
             for (int i = 0; i < ColumnCount; i++)
             {
                 var fields = Schema.FieldsList[i];
                 sb.AppendLine(fields.PrettyPrint());
             }
 
-            sb.AppendLine("----");
+            sb.AppendLine("\nColumn Data: ");
+
+            var arrayPrinter = new ArrayPrinter(sb);
 
             for(int i = 0; i< ColumnCount; i++)
             {
-                var field = Schema.FieldsList[i];
-                sb.Append($"{field.Name}: [[");
+                sb.Append($"{Schema.FieldsList[i].Name}:");
 
-                for(int j = 0; j < Column(i).Length; j++)
+                var columnData = Column(i).Data;
+
+                if(columnData != null)
                 {
-                    sb.Append(Column(i).Data); //this needs correction
-                    if (j < ColumnCount - 1)
-                    {
-                        sb.Append(",");
-                    }
+                    sb.AppendLine(columnData.PrettyPrint());
+                }else
+                {
+                    sb.AppendLine("[NULL COLUMN]");
                 }
 
-                sb.AppendLine("]]");
 
+                //for (int j = 0; j < Column(i).Length; j++)
+                //{
+                //    sb.Append(columnData);
+                //    if (j < ColumnCount - 1)
+                //    {
+                //        sb.Append(",");
+                //    }
+                //}
+                //sb.AppendLine();
             }
-
             return sb.ToString();
         }
 

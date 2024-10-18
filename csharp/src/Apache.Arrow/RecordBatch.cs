@@ -144,16 +144,16 @@ namespace Apache.Arrow
                 return "Column count does not match the schema fields.";
             }
 
-            sb.AppendLine("=== Schema Information ===");
+            sb.AppendLine("--- Schema Information ---");
 
             for (int i = 0; i < ColumnCount; i++)
             {
                 var field = Schema.FieldsList[i];
-                sb.AppendLine($"{field.Name}: {field.DataType.GetType().Name}");
+                sb.AppendLine(Schema.FieldsList[i].PrettyPrint());
             }
-            sb.AppendLine("==========================");
+            sb.AppendLine("");
 
-            sb.AppendLine("=== Column Data ===");
+            sb.AppendLine("--- Column Data ---");
 
             var visitor = new ArrayPrinter(sb);
 
