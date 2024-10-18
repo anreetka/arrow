@@ -18,6 +18,9 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
+using Apache.Arrow.Arrays;
+using Apache.Arrow.Flatbuf;
 using Apache.Arrow.Memory;
 using Apache.Arrow.Types;
 
@@ -125,6 +128,48 @@ namespace Apache.Arrow
                     visitor.Visit(this);
                     break;
             }
+        }
+
+        public string PrettyPrint()
+        {
+            var sb = new StringBuilder();
+
+            if (Schema == null || Schema.FieldsList == null)
+            {
+                return "Schema is not defined.";
+            }
+
+            if (ColumnCount != Schema.FieldsList.Count)
+            {
+                return "Column count does not match the schema fields.";
+            }
+
+            sb.AppendLine("--- Schema Information ---");
+
+            for (int i = 0; i < ColumnCount; i++)
+            {
+                var field = Schema.FieldsList[i];
+                sb.AppendLine(Schema.FieldsList[i].PrettyPrint());
+            }
+            sb.AppendLine("");
+
+            sb.AppendLine("--- Column Data ---");
+
+            var visitor = new ArrayPrinter(sb);
+
+            for (int i = 0; i < ColumnCount; i++)
+            {
+                var column = Column(i);
+                var field = Schema.FieldsList[i];
+
+                sb.Append($"{field.Name}:[");
+
+                column.Accept(visitor);
+
+                sb.AppendLine("]"); 
+            }
+
+            return sb.ToString();
         }
 
         public override string ToString() => $"{nameof(RecordBatch)}: {ColumnCount} columns by {Length} rows";

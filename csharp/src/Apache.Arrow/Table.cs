@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace Apache.Arrow
 {
@@ -105,6 +106,51 @@ namespace Apache.Arrow
             Schema newSchema = Schema.SetField(columnIndex, column.Field);
             IList<Column> newColumns = Utility.SetListElement(_columns, columnIndex, column);
             return new Table(newSchema, newColumns);
+        }
+
+        public string PrettyPrint()
+        {
+            var sb = new StringBuilder();
+
+            sb.AppendLine("--- Table Information ---");
+
+            sb.AppendLine("\nSchema:");
+            for (int i = 0; i < ColumnCount; i++)
+            {
+                var fields = Schema.FieldsList[i];
+                sb.AppendLine(fields.PrettyPrint());
+            }
+
+            sb.AppendLine("\nColumn Data: ");
+
+            var arrayPrinter = new ArrayPrinter(sb);
+
+            for(int i = 0; i< ColumnCount; i++)
+            {
+                sb.Append($"{Schema.FieldsList[i].Name}:");
+
+                var columnData = Column(i).Data;
+
+                if(columnData != null)
+                {
+                    sb.AppendLine(columnData.PrettyPrint());
+                }else
+                {
+                    sb.AppendLine("[NULL COLUMN]");
+                }
+
+
+                //for (int j = 0; j < Column(i).Length; j++)
+                //{
+                //    sb.Append(columnData);
+                //    if (j < ColumnCount - 1)
+                //    {
+                //        sb.Append(",");
+                //    }
+                //}
+                //sb.AppendLine();
+            }
+            return sb.ToString();
         }
 
         public override string ToString() => $"{nameof(Table)}: {ColumnCount} columns by {RowCount} rows";

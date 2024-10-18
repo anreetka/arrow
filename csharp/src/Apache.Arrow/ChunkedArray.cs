@@ -15,6 +15,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using Apache.Arrow.Types;
 
 namespace Apache.Arrow
@@ -90,6 +93,44 @@ namespace Apache.Arrow
         public ChunkedArray Slice(long offset)
         {
             return Slice(offset, Length - offset);
+        }
+
+        public string PrettyPrint()
+        {
+            var sb = new StringBuilder();
+            sb.Append($"[");
+
+            var visitor = new ArrayPrinter(sb);
+
+            if (ArrayCount <= 4)
+            {
+                PrintArrays(visitor, sb, 0, ArrayCount);
+            }
+            else
+            {
+                PrintArrays(visitor, sb, 0, 2);
+                sb.Append(",...,");
+                PrintArrays(visitor, sb, ArrayCount - 2, ArrayCount);
+            }
+
+            sb.Append("]");
+
+            return sb.ToString();
+        }
+
+        private void PrintArrays(ArrayPrinter visitor, StringBuilder sb, int start, int end)
+        {
+            for(int i =start; i < end; i++)
+            {
+                var array = Arrays[i];
+                array.Accept(visitor);
+
+                if (i < end - 1)
+                {
+                    sb.Append(",");
+                }
+
+            }
         }
 
         public override string ToString() => $"{nameof(ChunkedArray)}: Length={Length}, DataType={DataType.Name}";
