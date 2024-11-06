@@ -61,6 +61,27 @@ namespace Apache.Arrow
             IsNullable = nullable;
         }
 
+        public string PrettyPrint()
+        {
+            var metadataString = HasMetadata
+                ? string.Join(", ", Metadata.Select(kvp => $"{kvp.Key}={kvp.Value}")): "";
+
+            string fieldString = $"{Name}: {DataType.Name}"; ;
+
+            if (!IsNullable)
+            {
+                fieldString += " NOT NULL";
+            }
+
+
+            if( metadataString.Length > 0 )
+            {
+                fieldString += $" {metadataString}";
+            }
+
+            return $"{fieldString}";
+        }
+
         public override string ToString() => $"{nameof(Field)}: Name={Name}, DataType={DataType.Name}, IsNullable={IsNullable}, Metadata count={Metadata?.Count ?? 0}";
     }
 }

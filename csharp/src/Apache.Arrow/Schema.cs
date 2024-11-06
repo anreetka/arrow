@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 
 namespace Apache.Arrow
 {
@@ -142,6 +143,37 @@ namespace Apache.Arrow
             {
                 visitor.Visit(this);
             }
+        }
+
+        public string PrettyPrint()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("--- Schema Details ---");
+            sb.AppendLine($"Number of Fields: {_fieldsList.Count}\n");
+
+            sb.AppendLine("--- Fields Information ---");
+
+            foreach (var field in _fieldsList)
+            {
+                sb.AppendLine(field.PrettyPrint());
+            }
+
+            sb.AppendLine("");
+
+            if(HasMetadata)
+            {
+                sb.AppendLine("--- Field Metadata --- ");
+                foreach (var kv in Metadata)
+                {
+                    sb.AppendLine($"{kv.Key}: {kv.Value}");
+                }
+            }
+            else
+            {
+                sb.AppendLine("No metadata available.");
+            }
+
+            return sb.ToString();
         }
 
         public override string ToString() => $"{nameof(Schema)}: Num fields={_fieldsList.Count}, Num metadata={Metadata?.Count ?? 0}";
