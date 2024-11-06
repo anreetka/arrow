@@ -9,7 +9,7 @@ namespace Apache.Arrow.Memory
 {
     internal class LargeMemory<T>: IDisposable
     {
-        private nint _ptr;
+        private IntPtr _ptr;
         private long _size;
 
         public LargeMemory(long size)
