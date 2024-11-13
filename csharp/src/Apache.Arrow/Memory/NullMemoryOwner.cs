@@ -26,4 +26,13 @@ namespace Apache.Arrow.Memory
         {
         }
     }
+
+    internal class LargeNullMemoryOwner: ILargeMemoryOwner<byte>
+    {
+        public LargeMemory<byte> LargeMemory => LargeMemory<byte>.Empty;
+        public void Dispose()
+        {
+
+        }
+    }
 }
