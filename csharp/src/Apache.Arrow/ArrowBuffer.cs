@@ -89,6 +89,14 @@ namespace Apache.Arrow
                 return true;
             }
 
+            if(_memoryOwner is ILargeMemoryOwner<byte> largeMemoryOwner)
+            {
+                IntPtr largePtr = largeMemoryOwner.LargeMemory.Pin();
+                newOwner.Acquire(largePtr, 0, largeMemoryOwner.LargeMemory.Length);
+                ptr = largePtr;
+                return true;
+            }
+
             ptr = IntPtr.Zero;
             return false;
         }

@@ -4,8 +4,7 @@ using System.Text;
 
 namespace Apache.Arrow.Memory
 {
-    internal interface ILargeNativeAllocationOwner
+    internal class ReadOnlyLargeSpan
     {
-        void Release(IntPtr ptr, long offset, long length);
     }
 }

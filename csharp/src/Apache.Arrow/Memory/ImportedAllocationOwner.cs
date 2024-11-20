@@ -51,6 +51,11 @@ namespace Apache.Arrow.Memory
             Release();
         }
 
+        public void Release(IntPtr ptr, long offset, long length)
+        {
+            Release();
+        }
+
         public void Release()
         {
             if (Interlocked.Decrement(ref _referenceCount) == 0)

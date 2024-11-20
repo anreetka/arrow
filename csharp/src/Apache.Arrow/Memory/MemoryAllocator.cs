@@ -40,6 +40,12 @@ namespace Apache.Arrow.Memory
                 Interlocked.Increment(ref _allocations);
                 Interlocked.Add(ref _bytesAllocated, n);
             }
+
+            internal void Allocate(long n)
+            {
+                Interlocked.Increment(ref _allocations);
+                Interlocked.Add(ref _bytesAllocated, n);
+            }
         }
 
         public Stats Statistics { get; }
@@ -71,11 +77,30 @@ namespace Apache.Arrow.Memory
             return memoryOwner;
         }
 
+        public ILargeMemoryOwner<byte> Allocate(long length)
+        {
+            if (length < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(length));
+            }
+
+            if (length == 0)
+            {
+                return (ILargeMemoryOwner<byte>)NullMemoryOwner;
+            }
+
+            ILargeMemoryOwner<byte> memoryOwner = AllocateLargeInternal(length, out long bytesAllocated);
+            Statistics.Allocate(bytesAllocated);
+            return memoryOwner;
+
+        }
+
         private static MemoryAllocator BuildDefault()
         {
             return new NativeMemoryAllocator(DefaultAlignment);
         }
 
         protected abstract IMemoryOwner<byte> AllocateInternal(int length, out int bytesAllocated);
+        protected abstract ILargeMemoryOwner<byte> AllocateLargeInternal(long length, out long bytesAllocated);
     }
 }
