@@ -50,9 +50,39 @@ namespace Apache.Arrow.Memory
             return manager;
         }
 
+        protected override ILargeMemoryOwner<byte> AllocateLargeInternal(long length, out long bytesAllocated)
+        {
+            // TODO: Ensure memory is released if exception occurs.
+
+            // TODO: Optimize storage overhead; native memory manager stores a pointer
+            // to allocated memory, offset, and the allocation size. 
+
+            // TODO: Should the allocation be moved to NativeMemory?
+
+            long size = length + Alignment;
+            IntPtr ptr = Marshal.AllocHGlobal((nint)size);
+            int offset = (int)(Alignment - (ptr.ToInt64() & (Alignment - 1)));
+            var manager = new NativeLargeMemoryManager(ptr, offset, length);
+
+            bytesAllocated = (length + Alignment);
+
+            GC.AddMemoryPressure(bytesAllocated);
+
+            // Ensure all allocated memory is zeroed.
+            manager.LargeMemory.LargeSpan.Fill(0);
+
+            return manager;
+        }
+
         private sealed class NativeAllocationOwner : INativeAllocationOwner
         {
             public void Release(IntPtr ptr, int offset, int length)
+            {
+                Marshal.FreeHGlobal(ptr);
+                GC.RemoveMemoryPressure(length);
+            }
+
+            public void Release(IntPtr ptr, long offset, long length)
             {
                 Marshal.FreeHGlobal(ptr);
                 GC.RemoveMemoryPressure(length);

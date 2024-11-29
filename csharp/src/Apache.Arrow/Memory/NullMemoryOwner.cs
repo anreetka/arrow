@@ -18,9 +18,11 @@ using System.Buffers;
 
 namespace Apache.Arrow.Memory
 {
-    internal class NullMemoryOwner : IMemoryOwner<byte>
+    internal class NullMemoryOwner : IMemoryOwner<byte>, ILargeMemoryOwner<byte>
     {
         public Memory<byte> Memory => Memory<byte>.Empty;
+
+        public LargeMemory<byte> LargeMemory => LargeMemory<byte>.Empty;
 
         public void Dispose()
         {

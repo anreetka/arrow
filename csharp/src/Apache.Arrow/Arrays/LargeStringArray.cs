@@ -26,16 +26,19 @@ public class LargeStringArray: LargeBinaryArray, IReadOnlyList<string>, ICollect
 {
     public static readonly Encoding DefaultEncoding = StringArray.DefaultEncoding;
 
+    public long LargeLength => Length;
+    public long LargeOffset => Offset;
+
     public LargeStringArray(ArrayData data)
         : base(ArrowTypeId.LargeString, data) { }
 
-    public LargeStringArray(int length,
-        ArrowBuffer valueOffsetsBuffer,
-        ArrowBuffer dataBuffer,
-        ArrowBuffer nullBitmapBuffer,
-        int nullCount = 0, int offset = 0)
-        : this(new ArrayData(LargeStringType.Default, length, nullCount, offset,
-            new[] { nullBitmapBuffer, valueOffsetsBuffer, dataBuffer }))
+    public LargeStringArray(long length,
+            ArrowBuffer valueOffsetsBuffer,
+            ArrowBuffer dataBuffer,
+            ArrowBuffer nullBitmapBuffer,
+            int nullCount = 0, int offset = 0)
+            : this(new ArrayData(LargeStringType.Default, (int)length, nullCount, offset,
+                new[] { nullBitmapBuffer, valueOffsetsBuffer, dataBuffer }))
     { }
 
     public override void Accept(IArrowArrayVisitor visitor) => Accept(this, visitor);

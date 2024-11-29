@@ -16,6 +16,7 @@
 using System;
 using System.Buffers;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Apache.Arrow.Memory;
 
 namespace Apache.Arrow
@@ -23,6 +24,7 @@ namespace Apache.Arrow
     public readonly partial struct ArrowBuffer : IEquatable<ArrowBuffer>, IDisposable
     {
         private readonly IMemoryOwner<byte> _memoryOwner;
+        private readonly ILargeMemoryOwner<byte> _largeMemoryOwner;
         private readonly ReadOnlyMemory<byte> _memory;
 
         public static ArrowBuffer Empty => new ArrowBuffer(Memory<byte>.Empty);
@@ -40,7 +42,15 @@ namespace Apache.Arrow
             // be invalid.
 
             _memoryOwner = memoryOwner;
+            _largeMemoryOwner = null;
             _memory = Memory<byte>.Empty;
+        }
+
+        internal ArrowBuffer(ILargeMemoryOwner<byte> largeMemoryOwner)
+        {
+            _largeMemoryOwner = largeMemoryOwner;
+            _memoryOwner = null;
+            _memory = Memory<byte>.Empty; 
         }
 
         public ReadOnlyMemory<byte> Memory =>
@@ -81,6 +91,24 @@ namespace Apache.Arrow
                 ptr = IntPtr.Zero;
                 return true;
             }
+
+            if (_largeMemoryOwner != null)
+            {
+                var largeMemory = _largeMemoryOwner.LargeMemory;
+                var memoryHandle = largeMemory.Pin();
+
+                unsafe
+                {
+                    IntPtr tempPtr = (IntPtr)memoryHandle.Pointer;
+                    newOwner.Acquire(tempPtr, 0, (int)largeMemory.Length);
+
+                }
+
+                memoryHandle.Dispose();
+                ptr = default;
+                return true;
+            }
+
 
             if (_memoryOwner is IOwnableAllocation ownable && ownable.TryAcquire(out ptr, out int offset, out int length))
             {

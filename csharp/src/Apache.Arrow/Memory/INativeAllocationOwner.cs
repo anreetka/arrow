@@ -20,5 +20,6 @@ namespace Apache.Arrow.Memory
     internal interface INativeAllocationOwner
     {
         void Release(IntPtr ptr, int offset, int length);
+        void Release(IntPtr ptr, long offset, long length);
     }
 }

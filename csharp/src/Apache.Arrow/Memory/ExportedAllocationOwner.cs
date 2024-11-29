@@ -51,6 +51,11 @@ namespace Apache.Arrow.Memory
             throw new InvalidOperationException();
         }
 
+        public void Release(IntPtr ptr, long offset, long length)
+        {
+            throw new InvalidOperationException();
+        }
+
         public void IncRef()
         {
             Interlocked.Increment(ref _referenceCount);
