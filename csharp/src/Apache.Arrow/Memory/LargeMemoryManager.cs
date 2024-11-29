@@ -11,7 +11,7 @@ namespace Apache.Arrow.Memory
     {
         public virtual LargeMemory<T> LargeMemory => new LargeMemory<T>(this, GetSpan().Length);
 
-        public abstract Span<T> GetSpan();
+        public abstract LargeSpan<T> GetSpan();
 
         public abstract MemoryHandle Pin(long elementIndex = 0);
 

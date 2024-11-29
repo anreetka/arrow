@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 using System.Buffers;
 using System.Runtime.CompilerServices;
-using System.Diagnostics;
-using System.Text.Unicode;
-using System.Diagnostics.CodeAnalysis;
-
 namespace Apache.Arrow.Memory
 {
     public readonly struct LargeMemory<T> : IEquatable<LargeMemory<T>>
@@ -91,7 +85,7 @@ namespace Apache.Arrow.Memory
 
         public static implicit operator LargeMemory<T>(ArraySegment<T> segment) => new LargeMemory<T>(segment.Array, segment.Offset, segment.Count);
 
-        public static implicit operator ReadOnlyMemory<T>(LargeMemory<T> memory) => new ReadOnlyLargeMemory<T>(memory.ToArray());
+        public static implicit operator ReadOnlyLargeMemory<T>(LargeMemory<T> memory) => new ReadOnlyLargeMemory<T>(memory.ToArray());
 
         public static LargeMemory<T> Empty => default;
 
@@ -119,23 +113,46 @@ namespace Apache.Arrow.Memory
             return new LargeMemory<T>(_object, _index + start, length);
         }
 
-        public Span<T> Span
+        public unsafe LargeSpan<T> LargeSpan
         {
             get
             {
-                if(_object is T[] array)
+                ref T refToReturn = ref Unsafe.NullRef<T>();
+                long lengthOfUnderlyingSpan = 0;
+
+                object tmpObject = _object;
+
+                if(tmpObject != null)
                 {
-                    //implement here
-                }else if(_object is LargeMemoryManager<T> manager)
-                {
-                   //implement here
+                    if(tmpObject is T[] array)
+                    {
+                        refToReturn = ref MemoryMarshal.GetArrayDataReference(array);
+                        lengthOfUnderlyingSpan = array.Length;
+                    }else if(tmpObject is LargeMemoryManager<T> manager)
+                    {
+                        LargeSpan<T> memoryManagerSpan = manager.GetSpan();
+                        refToReturn = ref memoryManagerSpan[0]; ;
+                        lengthOfUnderlyingSpan = memoryManagerSpan.Length;
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Unsupported object type.");
+                    }
+
+                    refToReturn = ref Unsafe.Add(ref refToReturn, (IntPtr)(void*)_index);
+                    lengthOfUnderlyingSpan = _length;
+
+                    return new LargeSpan<T>(ref refToReturn, lengthOfUnderlyingSpan);
                 }
                 else
                 {
-                    throw new InvalidOperationException("Unsupported object type.");
+                    throw new InvalidOperationException("Object is null.");
                 }
+
             }
         }
+
+        public T[] ToArray() => LargeSpan.ToArray();
 
         public void CopyTo(LargeMemory<T> destination)
         {
@@ -143,8 +160,7 @@ namespace Apache.Arrow.Memory
             {
                 throw new ArgumentOutOfRangeException();
             }
-
-            Span.CopyTo(destination.Span);
+            LargeSpan.CopyToLargeSpan(destination.LargeSpan);
         }
 
         public bool TryCopyTo(LargeMemory<T> destination)
@@ -154,27 +170,42 @@ namespace Apache.Arrow.Memory
                 return false;
             }
 
-            Span.CopyTo(destination.Span);
+            LargeSpan.TryCopyTo(destination.LargeSpan);
             return true;
         }
 
         public unsafe MemoryHandle Pin()
         {
-            if(_object is T[] array)
-            {
-                //implement here
-            }
-            else if (_object is LargeMemoryManager<T> manager)
-            {
-                return manager.Pin(); 
-            }
-            else
-            {
-                throw new InvalidOperationException("Pinning is not supported for this memory type.");
-            }
-        }
+            object tmpObject = _object;
 
-        public T[] ToArray() => Span.ToArray();
+            if (tmpObject != null)
+            {
+                if (typeof(T) == typeof(char) && tmpObject is string s)
+                {
+                    GCHandle handle = GCHandle.Alloc(tmpObject, GCHandleType.Pinned);
+                    fixed(char* pString = s)
+                    {
+                        char* ptr = pString + _index;
+                        return new MemoryHandle((void*) ptr,handle);
+                    }
+
+                }
+                else if (tmpObject is LargeMemoryManager<T> manager)
+                {
+                    LargeSpan<T> largeSpan = manager.GetSpan();
+                    GCHandle handle = GCHandle.Alloc(tmpObject, GCHandleType.Pinned);
+                    ref T firstElement = ref largeSpan[0];
+                    void* pointer = Unsafe.AsPointer(ref firstElement);
+                    return new MemoryHandle(pointer, handle);
+
+                } else
+                {
+                    throw new InvalidOperationException("Unsupported object type for pinning.");
+                }
+            }
+
+            return default;
+        }
 
         public override bool Equals(object obj)
         {
@@ -200,6 +231,8 @@ namespace Apache.Arrow.Memory
         {
             return (_object != null ) ? HashCode.Combine(RuntimeHelpers.GetHashCode(_object), _index, _length) : 0;
         }
+
+
     }
 
 }

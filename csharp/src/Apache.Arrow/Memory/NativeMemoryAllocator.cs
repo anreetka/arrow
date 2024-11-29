@@ -60,7 +60,7 @@ namespace Apache.Arrow.Memory
             // TODO: Should the allocation be moved to NativeMemory?
 
             long size = length + Alignment;
-            IntPtr ptr = Marshal.AllocHGlobal(size);
+            IntPtr ptr = Marshal.AllocHGlobal((nint)size);
             int offset = (int)(Alignment - (ptr.ToInt64() & (Alignment - 1)));
             var manager = new NativeLargeMemoryManager(ptr, offset, length);
 
@@ -69,7 +69,7 @@ namespace Apache.Arrow.Memory
             GC.AddMemoryPressure(bytesAllocated);
 
             // Ensure all allocated memory is zeroed.
-            manager.LargeMemory.Span.Fill(0);
+            manager.LargeMemory.LargeSpan.Fill(0);
 
             return manager;
         }

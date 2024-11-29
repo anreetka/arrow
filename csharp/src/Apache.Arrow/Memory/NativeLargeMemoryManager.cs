@@ -34,10 +34,10 @@ namespace Apache.Arrow.Memory
         }
 #pragma warning restore CA2015
 
-        public override unsafe Span<byte> GetSpan()
+        public override unsafe LargeSpan<byte> GetSpan()
         {
             void* ptr = CalculatePointer(0);
-            return new Span<byte>(ptr, _length);
+            return new LargeSpan<byte>(ptr, _length);
         }
 
         public override unsafe MemoryHandle Pin(long elementIndex = 0)
@@ -46,7 +46,7 @@ namespace Apache.Arrow.Memory
             // managed by the garbage collector.
 
             void* ptr = CalculatePointer(elementIndex);
-            return new MemoryHandle(ptr, default, this);
+            return new MemoryHandle(ptr, default, (IPinnable)this);
         }
 
         public override void Unpin()
